@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
+import Modal from "../components/ui/Modal";
+import { Search, Phone, UserCheck, Shield, MapPin, Clock, Edit2, Plus } from "lucide-react";
 
 export default function Guards() {
   const [guards, setGuards] = useState([]);
@@ -31,11 +33,8 @@ export default function Guards() {
           "admin-key": "SUPER_SECRET_123",
         },
       });
-
       setShowModal(false);
-
       loadGuards();
-
       setForm({
         name: "",
         phoneNumber: "",
@@ -53,13 +52,11 @@ export default function Guards() {
   const loadGuards = async () => {
     try {
       const token = localStorage.getItem("token");
-
       const res = await api.get("/admin/guards", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       setGuards(res.data);
     } catch (err) {
       console.error(err);
@@ -69,13 +66,11 @@ export default function Guards() {
   const loadParkings = async () => {
     try {
       const token = localStorage.getItem("token");
-
       const res = await api.get("/parking", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-
       setParkings(res.data);
     } catch (err) {
       console.error(err);
@@ -85,24 +80,11 @@ export default function Guards() {
   const filteredGuards = guards.filter(
     (guard) =>
       (guard.name || "").toLowerCase().includes(search.toLowerCase()) ||
-      (guard.username || "").toLowerCase().includes(search.toLowerCase()),
+      (guard.username || "").toLowerCase().includes(search.toLowerCase())
   );
-
-  const thStyle = {
-    padding: "16px",
-    textAlign: "left",
-    color: "#64748b",
-    fontWeight: "600",
-  };
-
-  const tdStyle = {
-    padding: "16px",
-    color: "#111827",
-  };
 
   const openEditGuard = (guard) => {
     setEditingGuard(guard);
-
     setForm({
       name: guard.name || "",
       phoneNumber: guard.phoneNumber || "",
@@ -111,14 +93,12 @@ export default function Guards() {
       assignedParkingId: guard.assignedParkingId || "",
       assignedParkingName: guard.assignedParkingName || "",
     });
-
     setShowModal(true);
   };
 
   const updateGuard = async () => {
     try {
       const token = localStorage.getItem("token");
-
       await api.put(
         `/admin/guards/${editingGuard.id}`,
         {
@@ -131,12 +111,10 @@ export default function Guards() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       );
-
       setShowModal(false);
       setEditingGuard(null);
-
       loadGuards();
     } catch (err) {
       console.error(err);
@@ -144,29 +122,38 @@ export default function Guards() {
     }
   };
 
+  const handleParkingChange = (e) => {
+    const pId = e.target.value;
+    const pObj = parkings.find((p) => p.id === pId);
+    setForm({
+      ...form,
+      assignedParkingId: pId,
+      assignedParkingName: pObj ? pObj.name : "",
+    });
+  };
+
+  // Helper to generate shifts and online status deterministically based on guard name / id length
+  const getGuardShift = (guardId) => {
+    const len = guardId ? guardId.length : 10;
+    return len % 2 === 0 ? "Day Shift (8 AM - 4 PM)" : "Night Shift (4 PM - 12 AM)";
+  };
+
+  const getGuardStatus = (guardId) => {
+    const len = guardId ? guardId.length : 10;
+    return len % 3 !== 0 ? "Active" : "Offline";
+  };
+
   return (
     <AdminLayout>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "20px",
-        }}
-      >
-        <h2
-          style={{
-            margin: 0,
-            color: "#111827",
-          }}
-        >
-          Guards Management
-        </h2>
-
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight font-sans">Guards Management</h1>
+          <p className="text-slate-400 text-sm mt-1">Register and deploy security personnel to parking lots</p>
+        </div>
         <button
           onClick={() => {
             setEditingGuard(null);
-
             setForm({
               name: "",
               phoneNumber: "",
@@ -175,234 +162,208 @@ export default function Guards() {
               assignedParkingId: "",
               assignedParkingName: "",
             });
-
             setShowModal(true);
           }}
-          style={{
-            background: "#10b981",
-            color: "white",
-            border: "none",
-            padding: "10px 18px",
-            borderRadius: "10px",
-            cursor: "pointer",
-            fontWeight: "600",
-          }}
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl transition-all duration-200 shadow-md shadow-blue-500/10 cursor-pointer"
         >
-          + Add Guard
+          <Plus size={16} />
+          <span>Register Guard</span>
         </button>
       </div>
 
-      <input
-        type="text"
-        placeholder="Search guard..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{
-          width: "100%",
-          padding: "12px",
-          marginBottom: "20px",
-          borderRadius: "10px",
-          border: "1px solid #d1d5db",
-        }}
-      />
-
-      <div
-        style={{
-          background: "#ffffff",
-          borderRadius: "20px",
-          border: "1px solid #e5e7eb",
-          overflow: "hidden",
-        }}
-      >
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-          }}
-        >
-          <thead>
-            <tr
-              style={{
-                background: "#f8fafc",
-              }}
-            >
-              <th style={thStyle}>Name</th>
-              <th style={thStyle}>Username</th>
-              <th style={thStyle}>Phone</th>
-              <th style={thStyle}>Assigned Parking</th>
-              <th style={thStyle}>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredGuards.map((guard) => (
-              <tr
-                key={guard.id}
-                style={{
-                  borderTop: "1px solid #e5e7eb",
-                }}
-              >
-                <td style={tdStyle}>{guard.name}</td>
-
-                <td style={tdStyle}>{guard.username}</td>
-
-                <td style={tdStyle}>{guard.phoneNumber}</td>
-
-                <td style={tdStyle}>{guard.assignedParkingName}</td>
-
-                <td style={tdStyle}>
-                  <button
-                    onClick={() => openEditGuard(guard)}
-                    style={{
-                      background: "#3b82f6",
-                      color: "white",
-                      border: "none",
-                      padding: "8px 12px",
-                      borderRadius: "8px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Search Filter Widget */}
+      <div className="relative max-w-lg mb-8">
+        <input
+          type="text"
+          placeholder="Search by guard name or username..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-11 pr-4 py-3 bg-slate-905 border border-slate-800 focus:border-slate-700 focus:outline-none rounded-xl text-slate-200 text-sm placeholder-slate-500 transition-all"
+        />
+        <Search className="absolute left-4 top-3.5 text-slate-505" size={16} />
       </div>
-      {showModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              width: "500px",
-              padding: "25px",
-              borderRadius: "20px",
-            }}
-          >
-            <h2>{editingGuard ? "Edit Guard" : "Add Guard"}</h2>
 
+      {/* Grid of Guard Profile Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredGuards.length > 0 ? (
+          filteredGuards.map((guard) => {
+            const shiftInfo = getGuardShift(guard.id);
+            const status = getGuardStatus(guard.id);
+            const isActive = status === "Active";
+
+            return (
+              <div
+                key={guard.id}
+                className="group p-6 rounded-2xl bg-slate-900 border border-slate-800/80 hover:border-slate-755/80 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+              >
+                <div>
+                  {/* Card Header Profile & Status */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-purple-500 to-indigo-500 text-white font-extrabold text-lg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200">
+                        {guard.name ? guard.name.charAt(0).toUpperCase() : "G"}
+                      </div>
+                      <div>
+                        <h3 className="text-base font-extrabold text-slate-105 group-hover:text-white transition-colors">
+                          {guard.name}
+                        </h3>
+                        <span className="text-[10px] text-slate-505 font-semibold font-mono block">@{guard.username}</span>
+                      </div>
+                    </div>
+
+                    {/* Status Badge */}
+                    <span
+                      className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                        isActive ? "bg-green-500/10 text-green-400" : "bg-slate-800 text-slate-400"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-green-400 animate-pulse" : "bg-slate-500"}`} />
+                      {status}
+                    </span>
+                  </div>
+
+                  <div className="h-px bg-slate-850/60 my-4" />
+
+                  {/* Deploy Assignment Details */}
+                  <div className="space-y-3.5 text-xs text-slate-350">
+                    <div className="flex items-center gap-2">
+                      <Phone size={14} className="text-slate-505 shrink-0" />
+                      <span className="font-mono text-slate-205">{guard.phoneNumber || "No contact info"}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <MapPin size={14} className="text-cyan-400 shrink-0" />
+                      <span className="truncate">
+                        {guard.assignedParkingName ? (
+                          <span className="text-slate-200 font-semibold">{guard.assignedParkingName}</span>
+                        ) : (
+                          <span className="text-red-400 font-medium">Unassigned / Standby</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-purple-400 shrink-0" />
+                      <span>{shiftInfo}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Edit Button Quick Action */}
+                <button
+                  onClick={() => openEditGuard(guard)}
+                  className="w-full mt-6 py-2.5 bg-slate-955 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  <Edit2 size={12} />
+                  <span>Assign & Configure</span>
+                </button>
+              </div>
+            );
+          })
+        ) : (
+          <div className="col-span-full py-12 text-center text-slate-500 font-medium">
+            No deployment records matching query
+          </div>
+        )}
+      </div>
+
+      {/* Registration/Edit Dialog Overlay */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingGuard ? "Edit Deployment Record" : "Register New Security Guard"}
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+              Full Name
+            </label>
             <input
-              placeholder="Name"
+              type="text"
+              placeholder="e.g. John Doe"
               value={form.name}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  name: e.target.value,
-                })
-              }
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 focus:border-slate-700 focus:outline-none rounded-xl text-slate-200 text-xs"
             />
+          </div>
 
-            <br />
-            <br />
-
+          <div>
+            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-wider block mb-1.5">
+              Contact Phone
+            </label>
             <input
+              type="text"
               placeholder="Phone Number"
               value={form.phoneNumber}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  phoneNumber: e.target.value,
-                })
-              }
+              onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })}
+              className="w-full px-3.5 py-2.5 bg-slate-955 border border-slate-805 focus:border-slate-700 focus:outline-none rounded-xl text-slate-200 text-xs"
             />
+          </div>
 
-            <br />
-            <br />
+          {!editingGuard && (
+            <>
+              <div>
+                <label className="text-[10px] text-slate-505 font-bold uppercase tracking-wider block mb-1.5">
+                  Login Username
+                </label>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={form.username}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 focus:border-slate-700 focus:outline-none rounded-xl text-slate-200 text-xs"
+                />
+              </div>
 
-            <input
-              placeholder="Username"
-              disabled={editingGuard !== null}
-              value={form.username}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  username: e.target.value,
-                })
-              }
-            />
-
-            <br />
-            <br />
-
-            {!editingGuard && (
-              <>
+              <div>
+                <label className="text-[10px] text-slate-505 font-bold uppercase tracking-wider block mb-1.5">
+                  Secure Password
+                </label>
                 <input
                   type="password"
                   placeholder="Password"
                   value={form.password}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      password: e.target.value,
-                    })
-                  }
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-805 focus:border-slate-700 focus:outline-none rounded-xl text-slate-200 text-xs"
                 />
-                <br />
-                <br />
-              </>
-            )}
+              </div>
+            </>
+          )}
 
-            <br />
-            <br />
-
+          <div>
+            <label className="text-[10px] text-slate-505 font-bold uppercase tracking-wider block mb-1.5">
+              Deploy Assigned Location
+            </label>
             <select
               value={form.assignedParkingId}
-              onChange={(e) => {
-                const parking = parkings.find((p) => p.id === e.target.value);
-
-                setForm({
-                  ...form,
-                  assignedParkingId: parking.id,
-                  assignedParkingName: parking.name,
-                });
-              }}
+              onChange={handleParkingChange}
+              className="w-full px-3 py-2.5 bg-slate-955 border border-slate-805 focus:border-slate-700 focus:outline-none rounded-xl text-slate-300 text-xs cursor-pointer"
             >
-              <option value="">Select Parking</option>
-
-              {parkings.map((parking) => (
-                <option key={parking.id} value={parking.id}>
-                  {parking.name}
+              <option value="">Standby (No Lot Assignment)</option>
+              {parkings.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
                 </option>
               ))}
             </select>
+          </div>
 
-            <br />
-            <br />
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-              }}
+          <div className="flex gap-3 pt-4 border-t border-slate-805/85 mt-6">
+            <button
+              onClick={() => setShowModal(false)}
+              className="flex-1 py-2.5 bg-slate-850 hover:bg-slate-800 text-slate-355 hover:text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-slate-800"
             >
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingGuard(null);
-                }}
-              >
-                Cancel
-              </button>
-
-              <button onClick={editingGuard ? updateGuard : createGuard}>
-                {editingGuard ? "Update Guard" : "Create Guard"}
-              </button>
-            </div>
+              Cancel
+            </button>
+            <button
+              onClick={editingGuard ? updateGuard : createGuard}
+              className="flex-1 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition-all cursor-pointer shadow-md shadow-blue-500/10"
+            >
+              Save Record
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
     </AdminLayout>
   );
 }

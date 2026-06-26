@@ -13,6 +13,8 @@ import EditParking from "./pages/EditParking";
 import UserDetails from "./pages/UserDetails";
 import BookingDetails from "./pages/BookingDetails";
 import RevenueTransactions from "./pages/RevenueTransactions";
+import WalkIns from "./pages/WalkIns";
+import WalkInDetails from "./pages/WalkInDetails";
 
 function App() {
   return (
@@ -26,16 +28,18 @@ function App() {
         <Route path="/parkings" element={<Parkings />} />
         <Route path="/bookings" element={<Bookings />} />
         <Route path="/revenue" element={<Revenue />} />
-        <Route path="/parkings" element={<Parkings />} />
         <Route path="/parkings/:id" element={<ParkingDetails />} />
         <Route path="/parkings/add" element={<AddParking />} />
         <Route path="/parkings/edit/:id" element={<EditParking />} />
         <Route path="/users/:id" element={<UserDetails />} />
         <Route path="/bookings/:bookingId" element={<BookingDetails />} />
         <Route path="/revenue/transactions" element={<RevenueTransactions />} />
+        <Route path="/walkins" element={<WalkIns />} />
+        <Route path="/walkins/:vehicleNumber" element={<WalkInDetails />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
 export default App;
+
